@@ -151,7 +151,8 @@ async def detect_tool_call_regex_pattern(
         raise ValueError("source must be 'tool_call'")
 
     tool_name = tool_call.function.name or tool_call.type
-    text = json.dumps(scope_arguments(tool_call.function.arguments, argument_name))
+    # Keep non-ASCII characters as they are, so a pattern can match them; the default writes \uXXXX escapes.
+    text = json.dumps(scope_arguments(tool_call.function.arguments, argument_name), ensure_ascii=False)
 
     regex_config = config.rails.config.regex_detection
     options = getattr(regex_config, source).get(tool_name)
@@ -186,7 +187,8 @@ async def detect_tool_result_regex_pattern(
 
     tool_name = tool_call.function.name or tool_call.type
     content = tool_result.content
-    text = content if isinstance(content, str) else json.dumps(content)
+    # Keep non-ASCII characters as they are, so a pattern can match them; the default writes \uXXXX escapes.
+    text = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
 
     regex_config = config.rails.config.regex_detection
     options = getattr(regex_config, source).get(tool_name)

@@ -937,6 +937,12 @@ class TestExampleConfig:
             ),
             (
                 "codex",
+                "apply_patch",
+                {"command": "*** Begin Patch\n*** Update File: données/.env\n@@\n-a\n+b\n*** End Patch\n"},
+                "regex check tool call",
+            ),
+            (
+                "codex",
                 "Write",
                 {"file_path": "/home/user/notes.txt", "content": "x"},
                 "tool call 'Write' is not an allowed tool",
@@ -965,6 +971,7 @@ class TestExampleConfig:
             "codex-safe-patch",
             "codex-patch-to-secrets-file",
             "codex-patch-renaming-to-secrets-file",
+            "codex-patch-to-secrets-file-in-non-ascii-folder",
             "codex-claude-code-tool",
             "nemo-relay-search",
             "nemo-relay-empty-query",

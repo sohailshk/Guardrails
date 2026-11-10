@@ -909,3 +909,66 @@ async def test_detect_tool_result_regex_pattern_allows_empty_content():
 
     assert result.is_blocked is False
     assert result.metadata["is_match"] is False
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_detect_tool_call_regex_pattern_matches_non_ascii_argument():
+    """A pattern with a non-ASCII character matches it in a tool call's arguments, not its JSON escape."""
+    config = RailsConfig.from_content(
+        yaml_content="""
+            models: []
+            rails:
+              config:
+                regex_detection:
+                  tool_call:
+                    search:
+                      patterns:
+                        - "contraseña"
+        """,
+        colang_content="",
+    )
+
+    result = await detect_tool_call_regex_pattern(
+        source="tool_call",
+        tool_call=_tool_call("search", {"query": "olvidé mi contraseña"}),
+        tool_definition=_permissive_tool("search"),
+        config=config,
+        argument_name="query",
+    )
+
+    assert result.is_blocked is True
+    assert result.metadata["detections"] == ["contraseña"]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_detect_tool_result_regex_pattern_matches_non_ascii_content_blocks():
+    """A pattern with a non-ASCII character matches it in a tool result's content blocks, not its JSON escape."""
+    config = RailsConfig.from_content(
+        yaml_content="""
+            models: []
+            rails:
+              config:
+                regex_detection:
+                  tool_result:
+                    lookup_customer:
+                      patterns:
+                        - "número de seguro social"
+        """,
+        colang_content="",
+    )
+
+    result = await detect_tool_result_regex_pattern(
+        source="tool_result",
+        tool_call=_tool_call("lookup_customer", {}),
+        tool_result=ToolResult(
+            call_id="call_1",
+            name="lookup_customer",
+            content=[{"type": "text", "text": "número de seguro social: 123-45-6789"}],
+        ),
+        config=config,
+    )
+
+    assert result.is_blocked is True
+    assert result.metadata["detections"] == ["número de seguro social"]
